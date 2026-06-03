@@ -69,14 +69,14 @@ const cyberProfiles = [
     alias: 'HTB',
     href: 'https://app.hackthebox.com/profile/ZeroOpsX',
     icon: Terminal,
-    stats: ['Rank: Pro Hacker', 'Top 1%', 'Platform ID: ZeroOpsX'],
+    stats: ['Platform ID: ZeroOpsX'],
   },
   {
     platform: 'TryHackMe',
     alias: 'THM',
     href: 'https://tryhackme.com/p/ZeroOpsX',
     icon: Target,
-    stats: ['Rank: Pro Hacker', 'Rooms Cleared: 150+', 'Platform ID: ZeroOpsX'],
+    stats: ['Platform ID: ZeroOpsX'],
   },
 ];
 
@@ -304,7 +304,7 @@ export default function Home() {
                   <Cpu size={14} className="text-red-500" /> Tech Stack
                 </h2>
                 <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
-                  {['Python', 'C','C#', 'C++', 'Rust', 'Asm x64', 'WDK', 'BYOVD', 'Sliver', 'Havoc'].map((tech) => (
+                  {['C', 'C++', 'Rust', 'Asm x64', 'WDK', 'BYOVD', 'Sliver', 'Havoc'].map((tech) => (
                     <span key={tech} className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-slate-400">
                       {tech}
                     </span>
