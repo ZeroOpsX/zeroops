@@ -304,7 +304,7 @@ export default function Home() {
                   <Cpu size={14} className="text-red-500" /> Tech Stack
                 </h2>
                 <div className="flex flex-wrap gap-1.5 font-mono text-[11px]">
-                  {['C', 'C++', 'Rust', 'Asm x64', 'WDK', 'BYOVD', 'Sliver', 'Havoc'].map((tech) => (
+                  {['Python', 'C', 'C++', 'C#', 'Rust', 'Asm x64', 'WDK', 'BYOVD', 'Sliver', 'Havoc'].map((tech) => (
                     <span key={tech} className="rounded border border-slate-800 bg-slate-950 px-2 py-1 text-slate-400">
                       {tech}
                     </span>
