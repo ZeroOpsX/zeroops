@@ -37,7 +37,7 @@ export default function Home() {
             </div>
             
             <div className="flex flex-wrap gap-2.5 font-mono text-xs">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-800 transition">
+              <a href="https://github.com/ZeroOpsX" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-800 transition">
                 <GitBranch size={13} className="text-emerald-400" /> GitHub
               </a>
               <a href="mailto:ZeroOpsX@proton.me" className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-800 transition">
