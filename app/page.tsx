@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Terminal, Shield, Cpu, Binary, Github, Mail, Key, Download, ChevronRight, Sliders } from 'lucide-react';
+import { Terminal, Shield, Cpu, Binary, GitHub, Mail, Key, Download, ChevronRight, Sliders } from 'lucide-react';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'overview' | 'os' | 'tools'>('overview');
@@ -38,7 +38,7 @@ export default function Home() {
             
             <div className="flex flex-wrap gap-2.5 font-mono text-xs">
               <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-800 transition">
-                <Github size={13} className="text-emerald-400" /> GitHub
+                <GitHub size={13} className="text-emerald-400" /> GitHub
               </a>
               <a href="mailto:ZeroOpsX@proton.me" className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-800 transition">
                 <Mail size={13} className="text-emerald-400" /> ProtonMail
