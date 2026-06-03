@@ -1,10 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Terminal, Shield, Cpu, Binary, Mail, Key, Download, ChevronRight, Sliders } from 'lucide-react';
-
-
-import { Github as GithubIcon } from 'lucide-react';
+import { Shield, Cpu, Mail, Key, Download, ChevronRight, Sliders, GitBranch } from 'lucide-react';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<'overview' | 'os' | 'tools'>('overview');
@@ -41,7 +38,7 @@ export default function Home() {
             
             <div className="flex flex-wrap gap-2.5 font-mono text-xs">
               <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-800 transition">
-                <GithubIcon size={13} className="text-emerald-400" /> GitHub
+                <GitBranch size={13} className="text-emerald-400" /> GitHub
               </a>
               <a href="mailto:ZeroOpsX@proton.me" className="flex items-center gap-2 bg-slate-900/80 hover:bg-slate-800 px-4 py-2 rounded-lg border border-slate-800 transition">
                 <Mail size={13} className="text-emerald-400" /> ProtonMail
@@ -81,9 +78,9 @@ export default function Home() {
                   <Shield size={14} className="text-emerald-500" /> Core Intel
                 </h2>
                 <div className="space-y-3 font-mono text-xs text-slate-300">
-                  <p><span className="text-slate-500 block">// RETAINED ROLE</span> Adversarial Researcher</p>
-                  <p><span className="text-slate-500 block">// LAYER ACCESS</span> Ring 0 (Kernel Mode)</p>
-                  <p><span className="text-slate-500 block">// TARGET ENVIRONMENT</span> Windows Enterprise</p>
+                  <p><span className="text-slate-500 block">{'// RETAINED ROLE'}</span> Adversarial Researcher</p>
+                  <p><span className="text-slate-500 block">{'// LAYER ACCESS'}</span> Ring 0 (Kernel Mode)</p>
+                  <p><span className="text-slate-500 block">{'// TARGET ENVIRONMENT'}</span> Windows Enterprise</p>
                 </div>
               </section>
 
@@ -101,7 +98,7 @@ export default function Home() {
 
             <div className="md:col-span-2 flex flex-col gap-6">
               <section className="border border-slate-800/60 bg-slate-900/10 rounded-xl p-6">
-                <h3 className="text-sm font-bold text-slate-300 font-mono mb-3">// ADVERSARIAL PHENOMENON</h3>
+                <h3 className="text-sm font-bold text-slate-300 font-mono mb-3">{'// ADVERSARIAL PHENOMENON'}</h3>
                 <p className="text-xs text-slate-400 leading-relaxed mb-4">
                   Modern endpoint defenses rely on standard assumptions of trust. My research targets the architectural gaps between user-land detection matrices and hardware execution loops.
                 </p>
@@ -153,7 +150,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-3 bg-black/30 p-4 border border-slate-900 rounded-xl">
-                  <h3 className="text-slate-400 font-bold">// CRYPTOGRAPHIC VERIFICATION</h3>
+                  <h3 className="text-slate-400 font-bold">{'// CRYPTOGRAPHIC VERIFICATION'}</h3>
                   <div className="space-y-2 text-[11px]">
                     <div>
                       <span className="text-slate-600 block">SHA-256 Checksum:</span>
