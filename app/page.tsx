@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FormEvent, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AtSign as Twitter,
   BookOpen,
@@ -9,9 +9,7 @@ import {
   Download,
   GitBranch as GitHub,
   Key,
-  Lock,
   Mail,
-  PlusCircle,
   Radio as Facebook,
   Send,
   Shield,
@@ -22,12 +20,29 @@ import {
 } from 'lucide-react';
 
 type ActiveTab = 'overview' | 'os' | 'tools' | 'blog';
+type ProfileId = 'htb' | 'thm';
+type TelemetryState = 'loading' | 'live' | 'fallback';
 
 type BlogPost = {
   title: string;
   date: string;
   category: string;
   excerpt: string;
+};
+
+type TelemetryProfile = {
+  displayName: string;
+  parameters: Array<{
+    label: string;
+    value: string;
+  }>;
+  source: 'live' | 'unavailable';
+};
+
+type WarfareTelemetry = {
+  status: 'live' | 'partial' | 'unavailable';
+  profiles: Record<ProfileId, TelemetryProfile>;
+  updatedAt: string;
 };
 
 const contactLinks = [
@@ -65,18 +80,18 @@ const contactLinks = [
 
 const cyberProfiles = [
   {
+    id: 'htb' as const,
     platform: 'Hack The Box',
     alias: 'HTB',
-    href: 'https://app.hackthebox.com/profile/ZeroOpsX',
+    href: 'https://profile.hackthebox.com/profile/019d5150-7665-7389-841a-1aa9bc3e53d8',
     icon: Terminal,
-    stats: ['Platform ID: ZeroOpsX'],
   },
   {
+    id: 'thm' as const,
     platform: 'TryHackMe',
     alias: 'THM',
-    href: 'https://tryhackme.com/p/ZeroOpsX',
+    href: 'https://tryhackme.com/p/zeroopsX',
     icon: Target,
-    stats: ['Platform ID: ZeroOpsX'],
   },
 ];
 
@@ -107,7 +122,7 @@ const voidSystems = [
   },
 ];
 
-const initialPosts: BlogPost[] = [
+const blogPosts: BlogPost[] = [
   {
     title: 'Mapping Kernel Attack Surfaces Without Burning Telemetry',
     date: '2026-06-03',
@@ -130,35 +145,62 @@ const initialPosts: BlogPost[] = [
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
-  const [adminOpen, setAdminOpen] = useState(false);
-  const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
-  const [draftTitle, setDraftTitle] = useState('');
-  const [draftCategory, setDraftCategory] = useState('');
-  const [draftContent, setDraftContent] = useState('');
+  const [telemetryState, setTelemetryState] = useState<TelemetryState>('loading');
+  const [telemetry, setTelemetry] = useState<WarfareTelemetry | null>(null);
 
-  const publishPost = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 9000);
 
-    const title = draftTitle.trim();
-    const category = draftCategory.trim();
-    const content = draftContent.trim();
+    async function fetchTelemetry() {
+      try {
+        const response = await fetch('/api/warfare', {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
 
-    if (!title || !category || !content) {
-      return;
+        if (!response.ok) {
+          throw new Error(`Telemetry proxy returned ${response.status}`);
+        }
+
+        const data = (await response.json()) as WarfareTelemetry;
+
+        if (mounted) {
+          setTelemetry(data);
+          setTelemetryState(data.status === 'unavailable' ? 'fallback' : 'live');
+        }
+      } catch {
+        if (mounted) {
+          setTelemetryState('fallback');
+        }
+      } finally {
+        window.clearTimeout(timeout);
+      }
     }
 
-    const newPost: BlogPost = {
-      title,
-      category,
-      excerpt: content,
-      date: new Date().toISOString().slice(0, 10),
-    };
+    fetchTelemetry();
 
-    setPosts((currentPosts) => [newPost, ...currentPosts]);
-    setDraftTitle('');
-    setDraftCategory('');
-    setDraftContent('');
-  };
+    return () => {
+      mounted = false;
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, []);
+
+  const displayedProfiles = useMemo(
+    () =>
+      cyberProfiles.map((profile) => {
+        const liveProfile = telemetry?.profiles[profile.id];
+
+        return {
+          ...profile,
+          parameters: telemetryState === 'loading' ? [] : liveProfile?.parameters ?? [],
+          source: telemetryState === 'loading' ? 'loading' : liveProfile?.source ?? 'unavailable',
+        };
+      }),
+    [telemetry, telemetryState],
+  );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#060a13] text-slate-100 antialiased selection:bg-red-500/30 selection:text-red-200">
@@ -191,7 +233,7 @@ export default function Home() {
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {cyberProfiles.map((profile) => {
+                {displayedProfiles.map((profile) => {
                   const Icon = profile.icon;
 
                   return (
@@ -215,13 +257,25 @@ export default function Home() {
                         </div>
                         <ChevronRight size={14} className="text-red-300/50 transition group-hover:text-red-300" />
                       </div>
-                      <div className="relative mt-3 flex flex-wrap gap-1.5 text-[10px] text-slate-400">
-                        {profile.stats.map((stat) => (
-                          <span key={stat} className="rounded border border-slate-800 bg-black/40 px-2 py-1">
-                            {stat}
-                          </span>
-                        ))}
-                      </div>
+                      {telemetryState === 'loading' ? (
+                        <p className="relative mt-3 animate-pulse font-mono text-[10px] text-red-300">
+                          [ FETCHING_LIVE_TELEMETRY... ]
+                        </p>
+                      ) : (
+                        <div className="relative mt-3 grid gap-1.5 text-[10px] text-slate-400">
+                          {profile.parameters.length > 0 ? (
+                            profile.parameters.map((parameter) => (
+                              <span key={`${parameter.label}-${parameter.value}`} className="rounded border border-slate-800 bg-black/40 px-2 py-1">
+                                {parameter.label}: <span className="text-red-200">{parameter.value}</span>
+                              </span>
+                            ))
+                          ) : (
+                            <span className="rounded border border-slate-800 bg-black/40 px-2 py-1 text-slate-500">
+                              NO_LIVE_PARAMETERS_RETURNED
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </a>
                   );
                 })}
@@ -314,17 +368,64 @@ export default function Home() {
 
               <section className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-5">
                 <h2 className="mb-4 flex items-center gap-2 font-mono text-xs font-bold uppercase text-slate-300">
-                  <ShieldAlert size={14} className="text-red-500" /> {'// WARFARE_PROFILE_SIGNAL'}
+                  <ShieldAlert size={14} className="text-red-500" /> {'// CYBER_WARFARE_PROFILES'}
                 </h2>
-                <div className="space-y-2 font-mono text-[11px] text-slate-400">
-                  <p className="flex items-center justify-between rounded border border-slate-800 bg-black/35 px-3 py-2">
-                    <span>HTB Signal</span>
-                    <span className="text-red-300">Top 1%</span>
-                  </p>
-                  <p className="flex items-center justify-between rounded border border-slate-800 bg-black/35 px-3 py-2">
-                    <span>THM Track</span>
-                    <span className="text-red-300">Pro Hacker</span>
-                  </p>
+                <div className="mb-3 flex items-center justify-between rounded border border-slate-800 bg-black/35 px-3 py-2 font-mono text-[10px]">
+                  <span className="text-slate-500">TELEMETRY_PIPELINE</span>
+                  <span className={telemetryState === 'live' ? 'text-red-300' : 'text-slate-500'}>
+                    {telemetryState === 'loading' ? '[ FETCHING_LIVE_TELEMETRY... ]' : telemetryState.toUpperCase()}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {displayedProfiles.map((profile) => {
+                    const Icon = profile.icon;
+
+                    return (
+                      <a
+                        key={profile.id}
+                        href={profile.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group block rounded-lg border border-slate-800 bg-black/35 p-4 transition hover:-translate-y-0.5 hover:border-red-500/50 hover:bg-red-500/[0.05] hover:shadow-[0_0_28px_rgba(239,68,68,0.13)]"
+                      >
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-red-500/25 bg-red-500/10 text-red-400">
+                              <Icon size={16} />
+                            </span>
+                            <div className="font-mono">
+                              <p className="text-xs font-bold text-slate-100">{profile.platform}</p>
+                              <p className="text-[10px] text-slate-500">
+                                {profile.source === 'live' ? 'LIVE_PUBLIC_SIGNAL' : 'NO_PUBLIC_PARAMETERS'}
+                              </p>
+                            </div>
+                          </div>
+                          <ChevronRight size={14} className="text-red-300/45 transition group-hover:text-red-300" />
+                        </div>
+                        {telemetryState === 'loading' ? (
+                          <p className="animate-pulse font-mono text-[10px] text-red-300">
+                            [ FETCHING_LIVE_TELEMETRY... ]
+                          </p>
+                        ) : (
+                          <div className="space-y-1 font-mono text-[10px] text-slate-400">
+                            {profile.parameters.length > 0 ? (
+                              profile.parameters.map((parameter) => (
+                                <p key={`${parameter.label}-${parameter.value}`} className="flex items-center gap-2">
+                                  <span className="h-1 w-1 rounded-full bg-red-500" />
+                                  {parameter.label}: <span className="text-red-200">{parameter.value}</span>
+                                </p>
+                              ))
+                            ) : (
+                              <p className="flex items-center gap-2 text-slate-500">
+                                <span className="h-1 w-1 rounded-full bg-slate-700" />
+                                NO_LIVE_PARAMETERS_RETURNED
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </a>
+                    );
+                  })}
                 </div>
               </section>
             </div>
@@ -474,66 +575,17 @@ export default function Home() {
         {activeTab === 'blog' && (
           <section className="space-y-5">
             <div className="rounded-xl border border-slate-800/80 bg-slate-950/50 p-5 md:p-6">
-              <button
-                type="button"
-                onClick={() => setAdminOpen((open) => !open)}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border border-red-500/25 bg-black/40 px-4 py-3 font-mono text-left transition hover:border-red-500/50 hover:bg-red-500/[0.05]"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md border border-red-500/30 bg-red-500/10 text-red-300">
-                    <Lock size={15} />
-                  </span>
-                  <span>
-                    <span className="block text-xs font-black text-red-300">ADMIN PORTAL</span>
-                    <span className="block text-[10px] text-slate-500">Local mock publishing console</span>
-                  </span>
-                </span>
-                <span className="text-xs text-slate-500">{adminOpen ? 'COLLAPSE' : 'EXPAND'}</span>
-              </button>
-
-              {adminOpen && (
-                <form onSubmit={publishPost} className="mt-4 grid gap-3 font-mono">
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <label className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                      Post Title
-                      <input
-                        value={draftTitle}
-                        onChange={(event) => setDraftTitle(event.target.value)}
-                        className="mt-2 min-h-11 w-full rounded-lg border border-slate-800 bg-black/55 px-3 text-xs text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-red-500/60"
-                        placeholder="Signal title"
-                      />
-                    </label>
-                    <label className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                      Category
-                      <input
-                        value={draftCategory}
-                        onChange={(event) => setDraftCategory(event.target.value)}
-                        className="mt-2 min-h-11 w-full rounded-lg border border-slate-800 bg-black/55 px-3 text-xs text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-red-500/60"
-                        placeholder="Kernel Exploitation"
-                      />
-                    </label>
-                  </div>
-                  <label className="text-[10px] uppercase tracking-[0.18em] text-slate-500">
-                    Log Content
-                    <textarea
-                      value={draftContent}
-                      onChange={(event) => setDraftContent(event.target.value)}
-                      className="mt-2 min-h-28 w-full resize-none rounded-lg border border-slate-800 bg-black/55 p-3 text-xs leading-relaxed text-slate-200 outline-none transition placeholder:text-slate-700 focus:border-red-500/60"
-                      placeholder="Write local log excerpt..."
-                    />
-                  </label>
-                  <button
-                    type="submit"
-                    className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-red-300/30 bg-red-600 px-4 py-2 text-xs font-black text-white shadow-[0_0_26px_rgba(220,38,38,0.22)] transition hover:bg-red-500 md:w-auto"
-                  >
-                    <PlusCircle size={15} /> Publish to Local State
-                  </button>
-                </form>
-              )}
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-red-300">
+                <BookOpen size={12} /> Cyber Logs
+              </div>
+              <h2 className="font-mono text-2xl font-black text-white">Source-Code Managed Dispatches</h2>
+              <p className="mt-2 max-w-3xl font-mono text-xs leading-relaxed text-slate-400">
+                Clean read-only feed. Add or update entries directly in the `blogPosts` array inside `page.tsx`.
+              </p>
             </div>
 
             <div className="grid gap-4">
-              {posts.map((post) => (
+              {blogPosts.map((post) => (
                 <article
                   key={`${post.date}-${post.title}`}
                   className="rounded-xl border border-slate-800/75 bg-slate-950/50 p-5 transition hover:border-red-500/35 hover:bg-slate-950/70 hover:shadow-[0_0_28px_rgba(239,68,68,0.1)]"
